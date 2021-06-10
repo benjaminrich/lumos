@@ -1,0 +1,16 @@
+Package: lumos
+Type: Package
+Version: 0.1
+Date: 2021-06-10
+Title: Shed Light on Your Data
+Description: Simple tabulation for data exploration in the console or in R markdown documents.
+Authors@R: person("Benjamin", "Rich", role=c("aut", "cre", "cph"), email="mail@benjaminrich.net")
+URL: https://github.com/benjaminrich/lumos
+BugReports: https://github.com/benjaminrich/lumos/issues
+License: GPL-3
+Depends: R (>= 3.5.0)
+Imports: stats,knitr
+Suggests: testthat
+VignetteBuilder: knitr
+Encoding: UTF-8
+RoxygenNote: 7.1.1

@@ -121,7 +121,14 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
             x <- x[[1]]
             getlabel   <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), nm, paste0(nm, ": ", y)) }
             gettype    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
-            getmissing <- function(x) { paste("Missing:", ifelse(any(is.na(x)), sprintf("%s/%s (%s%%)", sum(is.na(x)), length(x), formatC(100*mean(is.na(x)), digits=1)), "none")) }
+            getmissing <- function(x) {
+                paste("Missing:", ifelse(any(is.na(x)),
+                        sprintf("%s/%s (%s%%)",
+                            sum(is.na(x)),
+                            length(x),
+                            formatC(100*mean(is.na(x)), format="f", digits=1)),
+                        "none"))
+            }
             caption <- paste0(c(getlabel(x), gettype(x), getmissing(x)), collapse="\n")
             if (is.numeric(x) && length(unique(x)) > .max) {
                 tb <- c(

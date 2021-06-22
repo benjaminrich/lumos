@@ -1,7 +1,7 @@
 #' Shed Light on Your Data
 #'
-#' Like a magic wand that allows you to explore a \code{data.frame}.  It is so
-#' powerful, it can be abbreviated to the single letter \code{l}.
+#' Like a magic wand for exploring a \code{data.frame}.  It's so powerful that
+#' it can be abbreviated to the single letter \code{l}.
 #'
 #' @param data A \code{data.frame} (or, and object that can be converted to one
 #' by call \code{link{as.data.frame}}).
@@ -9,9 +9,9 @@
 #' directly refer to columns in data without quotes).
 #' @param .drop If \code{TRUE}, unused factor levels are dropped.
 #' @param .max For a single categorical variable, the maximum number of unique
-#' categories to show (can be \code{Inf}).  For a single numberic variable the
-#' maximum number of unique values for a numeric variable to be treated as
-#' categorical.
+#' categories to show (can be \code{Inf}).  For a single numberic variable, if
+#' there are no more than this many unique values, the variable will be treated
+#' as categorical.
 #' @param .pct If \code{TRUE}, show percents along with counts for single
 #' categorical variables.
 #' @param .order.by.freq If \code{TRUE}, for a single categorical variable,
@@ -21,18 +21,63 @@
 #' consecutive values that are identical.
 #' @param .gen If \code{TRUE}, instead of the usual output, run a "code
 #' generation" procedure and print its output, then return \code{NULL}
-#' invisibly. In this case \code{...} is ignored.
+#' invisibly. In this case \code{...} is ignored. See Details and Examples.
 #' @param .kable If \code{TRUE}, call \code{\link[knitr]{kable}} on the final
-#' object before returning.
+#' object and return its results. Can also be a character string passed as the
+#' \code{format} argument of \code{\link[knitr]{kable}}. Use \code{NULL} or
+#' \code{FALSE} to just return a \code{data.frame} instead.
+#'
+#' @details
+#' The main uses cases of this function are to quickly explore data
+#' interactively in the console, or create simple tabular summaries in R
+#' markdown documents. Similar to \code{\link[base]{summary}}, but aims to be
+#' as convenient as possible and produce nicer looking outputs.
+#'
+#' This function does different things depending on its inputs. The first
+#' argument \code{data} is always a \code{data.frame} (or \code{NULL}). Next
+#' come zero or more vector arguments, typically columns in \code{data} (which
+#' do not need to be quoted) or functions thereof. Lastly, some optional
+#' arguments that begin with `.` (dot) can be used to control certain aspects
+#' of the output.
+#'
+#' When called with only a \code{data.frame} argument \code{data}, outputs a
+#' table summarizing the variables in \code{data} including the columns:
+#' \code{variable} (name), \code{label} (only present if at least one variable
+#' has a \code{label} atrribute), \code{class}, \code{missing} (count) and
+#' \code{example} (a single value from that variable, typically the first
+#' nonmissing value).
+#'
+#' When called with \code{data} and one other argument, if the argument is
+#' categorical outputs a frequency table and if it is continuous outputs a few
+#' descriptive statistics (mean, standard deviation, median, min and max). The
+#' \code{.max} option is used to decide if a numeric argument is continuous or
+#' categorical.
+#'
+#' When called with more than one argument following \code{data}, those
+#' arguments should all be categorical (\code{.max} is ignored in this case).
+#' A frequency table is produced for the combinations of the categories, nested
+#' from left to right. Percentages are not shown, just counts, and no sorting
+#' is done (the categories appear in the order of factor levels).
+#'
+#' By default, the function \code{\link[knitr]{kable}} is used to format the
+#' output so you get nice looking tables in both the console and in R markdown
+#' documents.
+#'
+#' If the \code{.gen} argument is \code{TRUE}, then something different
+#' happens.  Instead of outputing a table, the function prints code statements
+#' into the console: a call to \code{lumos} for each variable in \code{data}.
+#' The code can be copied from the console back into the script and used to
+#' explore the \code{data.frame} one variable at a time. This is useful because
+#' it saves the need to type the code for each variable.
 #'
 #' @return The value returned depends on the parameters. If \code{.kable} is
 #' \code{TRUE} (the default) then an object of class \code{knitr_kable},
-#' otherwise a \code{data.frame}. See Examples.
+#' otherwise a \code{data.frame}. See Details and Examples.
 #'
 #' @examples
 #' lumos(iris)
-#' lumos(iris, .gen=TRUE)  # Generate code statements to call lumos() on each column of iris.
 #' lumos(iris, Species)
+#' lumos(iris, .gen=TRUE)  # Generate code statements to call lumos() on each column of iris.
 #'
 #' lumos(mtcars)
 #' lumos(mtcars, wt)
@@ -76,7 +121,7 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
             x <- x[[1]]
             getlabel   <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), nm, paste0(nm, ": ", y)) }
             gettype    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
-            getmissing <- function(x) { paste("Missing:", ifelse(any(is.na(x)), sprintf("%s/%s (%s%%)", sum(is.na(x)), length(x), 100*mean(is.na(x))), "none")) }
+            getmissing <- function(x) { paste("Missing:", ifelse(any(is.na(x)), sprintf("%s/%s (%s%%)", sum(is.na(x)), length(x), formatC(100*mean(is.na(x)), digits=1)), "none")) }
             caption <- paste0(c(getlabel(x), gettype(x), getmissing(x)), collapse="\n")
             if (is.numeric(x) && length(unique(x)) > .max) {
                 tb <- c(
@@ -131,8 +176,12 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
             }
         }
     }
-    if (.kable) {
-        knitr::kable(tb, row.names=FALSE, caption=get0("caption"))
+    if (!is.null(.kable) && !isFALSE(.kable)) {
+        if (isTRUE(.kable))
+            knitr::kable(x=tb, row.names=FALSE, caption=get0("caption"))
+        else {
+            knitr::kable(x=tb, row.names=FALSE, caption=get0("caption"), format=.kable)
+        }
     } else {
         tb
     }

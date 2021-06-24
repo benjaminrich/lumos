@@ -146,7 +146,6 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
                 tb <- table(x, useNA="ifany")
                 pct <- as.numeric(prop.table(table(x, useNA="ifany")))
                 tb <- data.frame(value=names(tb), N=as.numeric(tb), `%`=pct, check.names=FALSE)
-                names(tb)[[1]] <- nm
                 if (.order.by.freq) {
                     tb <- tb[order(tb$N, decreasing=TRUE),]
                 }
@@ -160,6 +159,7 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
                 } else {
                     tb$`%` <- NULL
                 }
+                names(tb)[[1]] <- nm
             }
         } else {
             x <- lapply(x, as.factor)

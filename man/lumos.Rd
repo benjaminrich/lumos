@@ -13,6 +13,7 @@ lumos(
   .pct = TRUE,
   .order.by.freq = .pct,
   .blanks = TRUE,
+  .recycle = TRUE,
   .gen = FALSE,
   .kable = TRUE
 )
@@ -25,6 +26,7 @@ l(
   .pct = TRUE,
   .order.by.freq = .pct,
   .blanks = TRUE,
+  .recycle = TRUE,
   .gen = FALSE,
   .kable = TRUE
 )
@@ -39,7 +41,7 @@ directly refer to columns in data without quotes).}
 \item{.drop}{If \code{TRUE}, unused factor levels are dropped.}
 
 \item{.max}{For a single categorical variable, the maximum number of unique
-categories to show (can be \code{Inf}).  For a single numberic variable, if
+categories to show (can be \code{Inf}).  For a single numeric variable, if
 there are no more than this many unique values, the variable will be treated
 as categorical.}
 
@@ -52,6 +54,9 @@ show the categories in decreasing order of frequency, from top to bottom
 
 \item{.blanks}{If \code{TRUE}, insert blank spaces instead of repeating
 consecutive values that are identical.}
+
+\item{.recycle}{If \code{TRUE}, use vector recycling to make all arguments
+have the same length.}
 
 \item{.gen}{If \code{TRUE}, instead of the usual output, run a "code
 generation" procedure and print its output, then return \code{NULL}
@@ -72,7 +77,7 @@ Like a magic wand for exploring a \code{data.frame}.  It's so powerful that
 it can be abbreviated to the single letter \code{l}.
 }
 \details{
-The uses cases of this function are to quickly explore data
+The main uses cases of this function are to quickly explore data
 interactively in the console, or create simple tabular summaries in R
 markdown documents. Similar to \code{\link[base]{summary}}, but aims to be
 as convenient as possible and produce nicer looking outputs.
@@ -85,7 +90,7 @@ arguments that begin with `.` (dot) can be used to control certain aspects
 of the output.
 
 When called with only a \code{data.frame} argument \code{data}, outputs a
-table summarizing the variables in \code{data} including colums
+table summarizing the variables in \code{data} including the columns:
 \code{variable} (name), \code{label} (only present if at least one variable
 has a \code{label} atrribute), \code{class}, \code{missing} (count) and
 \code{example} (a single value from that variable, typically the first

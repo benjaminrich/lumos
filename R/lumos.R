@@ -9,7 +9,7 @@
 #' directly refer to columns in data without quotes).
 #' @param .drop If \code{TRUE}, unused factor levels are dropped.
 #' @param .max For a single categorical variable, the maximum number of unique
-#' categories to show (can be \code{Inf}).  For a single numberic variable, if
+#' categories to show (can be \code{Inf}).  For a single numeric variable, if
 #' there are no more than this many unique values, the variable will be treated
 #' as categorical.
 #' @param .pct If \code{TRUE}, show percents along with counts for single
@@ -19,6 +19,8 @@
 #' (i.e. show the most frequent categories on top).
 #' @param .blanks If \code{TRUE}, insert blank spaces instead of repeating
 #' consecutive values that are identical.
+#' @param .recycle If \code{TRUE}, use vector recycling to make all arguments
+#' have the same length.
 #' @param .gen If \code{TRUE}, instead of the usual output, run a "code
 #' generation" procedure and print its output, then return \code{NULL}
 #' invisibly. In this case \code{...} is ignored. See Details and Examples.
@@ -89,7 +91,10 @@
 #' @export
 #' @importFrom stats median sd
 #' @importFrom utils head
-lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .gen=FALSE, .kable=TRUE) {
+lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .recycle=TRUE, .gen=FALSE, .kable=TRUE) {
+    if (getOption("lumos", "off") != "on") {
+        return(invisible(NULL))
+    }
     if (.gen) {
         name <- deparse(substitute(data))
         labels <- sapply(data, attr, which="label")
@@ -166,6 +171,9 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
             if (.drop) {
                 x <- lapply(x, droplevels)
             }
+            if (.recycle) {
+                x <- as.data.frame(x)
+            }
             tb <- do.call(table, c(x, list(useNA="ifany")))
             tb <- as.data.frame(tb)
             names(tb) <- c(nm, "N")
@@ -197,4 +205,34 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
 #' @rdname lumos
 #' @export
 l <- lumos
+
+.onLoad <- function(libname, pkgname) {
+    op <- list(
+        lumos = "on"
+    )
+    toset <- !(names(op) %in% names(options()))
+    if (any(toset)) options(op[toset])
+    invisible()
+}
+
+#' Turn \code{lumos} On or Off
+#'
+#' \code{lumos} can be turned on or off using an option. These are convenience
+#' functions for doing so. When \code{lumos} is off, calling it will do
+#' nothing; this can be useful to save time when running scripts in batch mode
+#' where this output is not needed.
+#'
+#' @return \code{NULL} Called for its side effects.
+#' @export
+lumos_on <- function() {
+    options(lumos="on")
+    invisible(NULL)
+}
+
+#' @rdname lumos_on
+#' @export
+lumos_off <- function() {
+    options(lumos="off")
+    invisible(NULL)
+}
 

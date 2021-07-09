@@ -2,6 +2,8 @@
 
 export(l)
 export(lumos)
+export(lumos_off)
+export(lumos_on)
 importFrom(stats,median)
 importFrom(stats,sd)
 importFrom(utils,head)

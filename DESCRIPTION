@@ -10,7 +10,7 @@ BugReports: https://github.com/benjaminrich/lumos/issues
 License: GPL-3
 Depends: R (>= 3.5.0)
 Imports: stats,knitr
-Suggests: testthat
+Suggests: testthat,rmarkdown
 VignetteBuilder: knitr
 LazyData: true
 Encoding: UTF-8

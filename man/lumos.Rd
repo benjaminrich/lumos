@@ -14,6 +14,7 @@ lumos(
   .order.by.freq = .pct,
   .blanks = TRUE,
   .recycle = TRUE,
+  .missing = FALSE,
   .gen = FALSE,
   .kable = TRUE
 )
@@ -27,6 +28,7 @@ l(
   .order.by.freq = .pct,
   .blanks = TRUE,
   .recycle = TRUE,
+  .missing = FALSE,
   .gen = FALSE,
   .kable = TRUE
 )
@@ -57,6 +59,10 @@ consecutive values that are identical.}
 
 \item{.recycle}{If \code{TRUE}, use vector recycling to make all arguments
 have the same length.}
+
+\item{.missing}{If \code{TRUE}, instead of the usual output, show the
+frequency and precent (by default) of missing values per column of
+\code{data}. If there are no missing values then no output is produced.}
 
 \item{.gen}{If \code{TRUE}, instead of the usual output, run a "code
 generation" procedure and print its output, then return \code{NULL}

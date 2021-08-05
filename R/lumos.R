@@ -21,6 +21,9 @@
 #' consecutive values that are identical.
 #' @param .recycle If \code{TRUE}, use vector recycling to make all arguments
 #' have the same length.
+#' @param .missing If \code{TRUE}, instead of the usual output, show the
+#' frequency and precent (by default) of missing values per column of
+#' \code{data}. If there are no missing values then no output is produced.
 #' @param .gen If \code{TRUE}, instead of the usual output, run a "code
 #' generation" procedure and print its output, then return \code{NULL}
 #' invisibly. In this case \code{...} is ignored. See Details and Examples.
@@ -91,7 +94,7 @@
 #' @export
 #' @importFrom stats median sd
 #' @importFrom utils head
-lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .recycle=TRUE, .gen=FALSE, .kable=TRUE) {
+lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .recycle=TRUE, .missing=FALSE, .gen=FALSE, .kable=TRUE) {
     if (getOption("lumos", "off") != "on") {
         return(invisible(NULL))
     }
@@ -99,94 +102,118 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
         name <- deparse(substitute(data))
         labels <- sapply(data, attr, which="label")
         comments <- sapply(labels, function(x) if (is.null(x)) "" else paste0(" # ", x))
-        cat(paste0("lumos(", name, ", ", names(data), ")", comments, "\n"),sep="")
+        fncalls <- sprintf("lumos(%s, %s)", name, names(data))
+        fieldwidth <- max(nchar(fncalls))
+        padding <- sprintf(paste0("%-", fieldwidth, "s"), fncalls)
+        cat(sprintf("%s%s\n", padding, comments), sep="")
+        #cat(paste0("lumos(", name, ", ", names(data), ")", comments, "\n"),sep="")
         return(invisible(NULL))
     }
     data <- as.data.frame(data)
-    x <- eval(substitute(list(...)), data, enclos=parent.frame())
-    if (length(x) == 0) {
-        nmissing <- function(x) { sum(is.na(x)) }
-        nunique <- function(x) { length(unique(x)) }
-        firstclass <- function(x) { class(x)[1] } 
-        firstvalue <- function(x) { format(x[!is.na(x)][1]) } 
-        getlabel <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), NA, y) }
-        tb <- data.frame(variable=names(data),
-            label=sapply(data, getlabel),
-            class=sapply(data, firstclass),
-            missing=sapply(data, nmissing),
-            unique=sapply(data, nunique),
-            example=sapply(data, firstvalue))
-        if (all(is.na(tb$label))) {
-            tb$label <- NULL
+    if (.missing) {
+        x <- sapply(data, nmissing)
+        if (.order.by.freq) {
+            x <- x[order(x, decreasing=T)]
         }
-        rownames(tb) <- NULL
-    } else {
-        nm <- as.character(unlist((match.call(expand.dots=FALSE)$...)))
-        if (length(x) == 1) {
-            x <- x[[1]]
-            getlabel   <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), nm, paste0(nm, ": ", y)) }
-            gettype    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
-            getmissing <- function(x) {
-                paste("Missing:", ifelse(any(is.na(x)),
-                        sprintf("%s/%s (%s%%)",
-                            sum(is.na(x)),
-                            length(x),
-                            formatC(100*mean(is.na(x)), format="f", digits=1)),
-                        "none"))
-            }
-            caption <- paste0(c(getlabel(x), gettype(x), getmissing(x)), collapse="\n")
-            if (is.numeric(x) && length(unique(x)) > .max) {
-                tb <- c(
-                    Mean   = format(mean(x, na.rm=T), digit=3),
-                    SD     = format(sd(x, na.rm=T), digit=3),
-                    Median = format(median(x, na.rm=T)),
-                    Min    = format(min(x, na.rm=T)),
-                    Max    = format(max(x, na.rm=T)))
-                tb <- data.frame(Statistic=names(tb), Value=tb)
-            } else {
-                x <- as.factor(x)
-                if (.drop) {
-                    x <- droplevels(x)
-                }
-                tb <- table(x, useNA="ifany")
-                pct <- as.numeric(prop.table(table(x, useNA="ifany")))
-                tb <- data.frame(value=names(tb), N=as.numeric(tb), `%`=pct, check.names=FALSE)
-                if (.order.by.freq) {
-                    tb <- tb[order(tb$N, decreasing=TRUE),]
-                }
-                tb <- head(tb, .max)
-                n.o <- length(x) - sum(tb$N)
-                if (n.o > 0) {
-                    tb <- rbind(tb, data.frame(value="Other", N=n.o, `%`=n.o/length(x), check.names=FALSE))
-                }
-                if (.pct) {
-                    tb$`%` <- sprintf("%.01f%%", 100*tb$`%`)
-                } else {
-                    tb$`%` <- NULL
-                }
-                names(tb)[[1]] <- nm
-            }
+        if (.drop) {
+            x <- x[x > 0]
+        }
+        tb <- data.frame(variable=names(x), missing=x, `%`=x/nrow(data), check.names=FALSE)
+        if (nrow(tb) == 0) {
+            return(invisible(tb))
         } else {
-            x <- lapply(x, as.factor)
-            if (.drop) {
-                x <- lapply(x, droplevels)
+            if (.pct) {
+                tb$`%` <- sprintf("%.01f%%", 100*tb$`%`)
+            } else {
+                tb$`%` <- NULL
             }
-            if (.recycle) {
-                x <- as.data.frame(x)
+        }
+    } else {
+        x <- eval(substitute(list(...)), data, enclos=parent.frame())
+        if (length(x) == 0) {
+            nmissing <- function(x) { sum(is.na(x)) }
+            nunique <- function(x) { length(unique(x)) }
+            firstclass <- function(x) { class(x)[1] } 
+            firstvalue <- function(x) { format(x[!is.na(x)][1]) } 
+            getlabel <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), NA, y) }
+            tb <- data.frame(variable=names(data),
+                label=sapply(data, getlabel),
+                class=sapply(data, firstclass),
+                missing=sapply(data, nmissing),
+                unique=sapply(data, nunique),
+                example=sapply(data, firstvalue))
+            if (all(is.na(tb$label))) {
+                tb$label <- NULL
             }
-            tb <- do.call(table, c(x, list(useNA="ifany")))
-            tb <- as.data.frame(tb)
-            names(tb) <- c(nm, "N")
-            tb <- tb[do.call(order, tb),]
-            tb <- tb[tb[[length(tb)]] != 0,]
-            if (.blanks) {
-                for (i in length(x):1) {
-                    combine <- function(...) paste(..., sep=";")
-                    id <- do.call(combine, Map(paste, unname(as.list(tb[, 1:i, drop=FALSE]))))
-                    id <- factor(id, levels=unique(id))
-                    y <- as.character(tb[[i]])
-                    y[duplicated(id)] <- ""
-                    tb[[i]] <- y
+            rownames(tb) <- NULL
+        } else {
+            nm <- as.character(unlist((match.call(expand.dots=FALSE)$...)))
+            if (length(x) == 1) {
+                x <- x[[1]]
+                getlabel   <- function(x) { y <- attr(x, "label"); ifelse(is.null(y), nm, paste0(nm, ": ", y)) }
+                gettype    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
+                getmissing <- function(x) {
+                    paste("Missing:", ifelse(any(is.na(x)),
+                            sprintf("%s/%s (%s%%)",
+                                sum(is.na(x)),
+                                length(x),
+                                formatC(100*mean(is.na(x)), format="f", digits=1)),
+                            "none"))
+                }
+                caption <- paste0(c(getlabel(x), gettype(x), getmissing(x)), collapse="\n")
+                if (is.numeric(x) && length(unique(x)) > .max) {
+                    tb <- c(
+                        Mean   = format(mean(x, na.rm=T), digit=3),
+                        SD     = format(sd(x, na.rm=T), digit=3),
+                        Median = format(median(x, na.rm=T)),
+                        Min    = format(min(x, na.rm=T)),
+                        Max    = format(max(x, na.rm=T)))
+                    tb <- data.frame(Statistic=names(tb), Value=tb)
+                } else {
+                    x <- as.factor(x)
+                    if (.drop) {
+                        x <- droplevels(x)
+                    }
+                    tb <- table(x, useNA="ifany")
+                    pct <- as.numeric(prop.table(table(x, useNA="ifany")))
+                    tb <- data.frame(value=names(tb), N=as.numeric(tb), `%`=pct, check.names=FALSE)
+                    if (.order.by.freq) {
+                        tb <- tb[order(tb$N, decreasing=TRUE),]
+                    }
+                    tb <- head(tb, .max)
+                    n.o <- length(x) - sum(tb$N)
+                    if (n.o > 0) {
+                        tb <- rbind(tb, data.frame(value="Other", N=n.o, `%`=n.o/length(x), check.names=FALSE))
+                    }
+                    if (.pct) {
+                        tb$`%` <- sprintf("%.01f%%", 100*tb$`%`)
+                    } else {
+                        tb$`%` <- NULL
+                    }
+                    names(tb)[[1]] <- nm
+                }
+            } else {
+                x <- lapply(x, as.factor)
+                if (.drop) {
+                    x <- lapply(x, droplevels)
+                }
+                if (.recycle) {
+                    x <- as.data.frame(x)
+                }
+                tb <- do.call(table, c(x, list(useNA="ifany")))
+                tb <- as.data.frame(tb)
+                names(tb) <- c(nm, "N")
+                tb <- tb[do.call(order, tb),]
+                tb <- tb[tb[[length(tb)]] != 0,]
+                if (.blanks) {
+                    for (i in length(x):1) {
+                        combine <- function(...) paste(..., sep=";")
+                        id <- do.call(combine, Map(paste, unname(as.list(tb[, 1:i, drop=FALSE]))))
+                        id <- factor(id, levels=unique(id))
+                        y <- as.character(tb[[i]])
+                        y[duplicated(id)] <- ""
+                        tb[[i]] <- y
+                    }
                 }
             }
         }

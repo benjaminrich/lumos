@@ -1,0 +1,76 @@
+---
+title: "`lumos`: Shed Light on Your Data"
+author: "Benjamin Rich"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    css: vignette.css
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{`lumos`: Shed Light on Your Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{table1}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, comment='', render=knitr::normal_print)
+
+library(lumos, quietly=TRUE)
+```
+
+
+The `lumos` package provides one main function, also called `lumos()` (but it can
+be abbreviated simply to `l()` to avoid typing).  The main uses cases of this
+function are to quickly explore data interactively in the console, or create
+simple tabular summaries in R markdown documents.  Similar to `summary()`, but
+aims to be as convenient as possible and produce nicer looking outputs.
+
+If we call `lumos()` with a `data.frame` as its sole argument, it outputs a table
+summarizing the variables, including the columns: `variable` (its name), `label`
+(only present if at least one variable has a `label` atrribute), `class`,
+`missing` (count) and `example` (a single value from that variable, typically
+the first nonmissing value).  Let's try it on the Boston housing data from the
+`MASS` package:
+
+```{r}
+library(survival)
+l(pbc)
+
+
+library(MASS)
+lumos(Boston)
+
+pima <- Pima.tr2
+l(pima)
+
+
+titanic <- as.data.frame(Titanic)
+l(titanic)
+l(titanic, Survived)
+l(titanic, Class, Survived)
+```
+
+When called with `data` and one other argument, if the argument is
+categorical outputs a frequency table and if it is continuous outputs a few
+descriptive statistics (mean, standard deviation, median, min and max). The
+`max` option is used to decide if a numeric argument is continuous or
+categorical.
+
+When called with more than one argument following `data`, those
+arguments should all be categorical (`.max` is ignored in this case).
+A frequency table is produced for the combinations of the categories, nested
+from left to right. Percentages are not shown, just counts, and no sorting
+is done (the categories appear in the order of factor levels).
+
+By default, the function `knitr::kable` is used to format the
+output so you get nice looking tables in both the console and in R markdown
+documents.
+
+If the `.gen` argument is `TRUE`, then something different
+happens.  Instead of outputing a table, the function prints code statements
+into the console: a call to `lumos()` for each variable in `data`.
+The code can be copied from the console back into the script and used to
+explore the `data.frame` one variable at a time. This is useful because
+it saves the need to type the code for each variable.
+

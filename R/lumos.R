@@ -170,7 +170,7 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
         }
     } else if (is.atomic(data) && length(nm)==0) {
         x <- data
-        getlabel   <- function(x) { ifelse(is.null(y <- attr(x, "label")), nm1, paste0(nm1, ": ", y)) }
+        getlabel   <- function(x) { ifelse(is.null(y <- attr(x, "label")), nm1, y) }
         gettype    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
         getmissing <- function(x) {
             paste("Missing:", ifelse(any(is.na(x)),

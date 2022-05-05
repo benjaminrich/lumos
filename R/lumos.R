@@ -31,6 +31,8 @@
 #' object and return its results. Can also be a character string passed as the
 #' \code{format} argument of \code{\link[knitr]{kable}}. Use \code{NULL} or
 #' \code{FALSE} to just return a \code{data.frame} instead.
+#' @param .graphical If \code{TRUE}, produce graphical output instead of
+#' tabular output. Either one or two variables can be plotted.
 #'
 #' @details
 #' The main uses cases of this function are to quickly explore data
@@ -94,7 +96,7 @@
 #' @export
 #' @importFrom stats median sd
 #' @importFrom utils head
-lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .recycle=TRUE, .missing=FALSE, .gen=FALSE, .kable=TRUE) {
+lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq=.pct, .blanks=TRUE, .recycle=TRUE, .missing=FALSE, .gen=FALSE, .kable=TRUE, .graphical=FALSE) {
     if (getOption("lumos", "off") != "on") {
         return(invisible(NULL))
     }
@@ -180,6 +182,9 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
                         formatC(100*mean(is.na(x)), format="f", digits=1)),
                     "none"))
         }
+        if (.graphical) {
+            return(univar(x=x, xlab=getlabel(x)))
+        }
         caption <- paste0(c(getlabel(x), gettype(x), getmissing(x)), collapse="\n")
         if ((is.numeric(x) || is.integer(x)) && length(unique(x)) > .max) {
             tb <- c(
@@ -213,6 +218,18 @@ lumos <- function(data=NULL, ..., .drop=TRUE, .max=20, .pct=TRUE, .order.by.freq
             names(tb)[[1]] <- nm1
         }
     } else {
+        if (.graphical) {
+            getlabel <- function(x, default) { ifelse(is.null(y <- attr(x, "label")), default, y) }
+            .nm <- as.character(nm)
+            if (length(x) == 1) {
+                return(univar(x=x[[1]], xlab=getlabel(x[[1]], .nm[[1]])))
+            } else if (length(x) == 2) {
+                return(bivar(x=x[[1]], xlab=getlabel(x[[1]], .nm[[1]]),
+                             y=x[[2]], ylab=getlabel(x[[2]], .nm[[2]])))
+            } else {
+                stop("Can only plot up to 2 variables")
+            }
+        }
         x <- lapply(x, as.factor)
         if (.drop) {
             x <- lapply(x, droplevels)

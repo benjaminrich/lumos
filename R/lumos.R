@@ -1,3 +1,140 @@
+"%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+}
+
+is.empty <- function(x) { length(x) == 0 }
+
+getLabel <- Vectorize(function(x, default) {
+    ifelse(is.null(y <- attr(x, "label")), default, y)
+})
+
+lumos <- function(data, ...) UseMethod("lumos")
+
+lumos.default <- function(data, ...) {
+
+    name.data <- deparse1(substitute(data))
+    name.dots <- as.character(unlist(match.call(expand.dots=FALSE)$...))
+
+    getName <- Vectorize(function(x) {
+        p <-str2lang(x) 
+        if (length(p) > 1 && identical(p[[1]], as.name("$"))) {
+            as.character(p[[3]])
+        } else {
+            x
+        }
+    })
+
+    x     <- c(list(data), list(...))
+    name  <- getName(c(name.data, name.dots))
+    label <- getLabel(x, name)
+
+    lumos_tabulate(x=x, name=name)
+}
+
+lumos.data.frame <- function(data, ..., .kable=TRUE, .graphical=FALSE) {
+
+    if (is.empty(list(...))) {
+        .call <- match.call()
+        .call[[1]] <- `lumos_dfsummary`
+        return(eval(.call))
+    }
+
+    name.data <- deparse1(substitute(data))
+    name.dots <- as.character(unlist(match.call(expand.dots=FALSE)$...))
+
+    x <- eval(substitute(list(...)), data, enclos=parent.frame())
+    name  <- name.dots
+    label <- getLabel(x, name)
+
+    if (.graphical) {
+        lumos_plot(x=x, name=name, label=label)
+    } else {
+        lumos_tabulate(x=x, name=name)
+    }
+}
+
+lumos_tabulate <- function(x, name, ..., .drop=TRUE, .blanks=TRUE, .recycle=TRUE, .kable=TRUE) {
+
+    caption <- NULL
+
+    x <- lapply(x, as.factor)
+    if (.drop) {
+        x <- lapply(x, droplevels)
+    }
+    if (.recycle) {
+        x <- as.data.frame(x)
+    }
+    tb <- do.call(table, c(x, list(useNA="ifany")))
+    tb <- as.data.frame(tb)
+    names(tb) <- c(name, "N")
+    tb <- tb[do.call(order, tb),]
+    tb <- tb[tb[[length(tb)]] != 0,]
+    if (.blanks) {
+        for (i in length(x):1) {
+            combine <- function(...) paste(..., sep=";")
+            id <- do.call(combine, Map(paste, unname(as.list(tb[, 1:i, drop=FALSE]))))
+            id <- factor(id, levels=unique(id))
+            y <- as.character(tb[[i]])
+            y[duplicated(id)] <- ""
+            tb[[i]] <- y
+        }
+    }
+
+    lumos_output(tb, ..., .kable=.kable)
+}
+
+lumos_dfsummary <- function(data, ..., .kable=TRUE) {
+
+    caption  <- paste0(collapse="\n", c(
+            deparse1(substitute(data)),
+            sprintf("%d rows, %d columns", dim(data)[1], dim(data)[2])))
+
+    nmissing   <- function(x) { sum(is.na(x)) }
+    nunique    <- function(x) { length(unique(x)) }
+    firstclass <- function(x) { class(x)[1] }
+    firstvalue <- function(x) { format(x[!is.na(x)][1]) }
+
+    tb <- data.frame(variable=names(data),
+        label   = getLabel(data, NA),
+        class   = sapply(data, firstclass),
+        missing = sapply(data, nmissing),
+        unique  = sapply(data, nunique),
+        example = sapply(data, firstvalue))
+    if (all(is.na(tb$label))) {
+        tb$label <- NULL
+    }
+    rownames(tb) <- NULL
+
+    lumos_output(tb, ..., .kable=.kable)
+}
+
+lumos_output <- function(tb, ..., .kable=TRUE) {
+    if (!is.null(.kable) && !isFALSE(.kable)) {
+        if (isTRUE(.kable))
+            knitr::kable(x=tb, row.names=FALSE, caption=caption)
+        else {
+            knitr::kable(x=tb, row.names=FALSE, caption=caption, format=.kable)
+        }
+    } else {
+        tb
+    }
+}
+
+lumos(CDISC::cdiscpilot01$sdtm$dm)
+lumos(CDISC::cdiscpilot01$sdtm$dm, .kable=F)
+
+lumos(adsl, .kable=F)
+lumos(adsl$sex)
+lumos(adsl$sex, adsl$race)
+lumos(adsl$sex, adsl$race, adsl$ethnic)
+lumos(adsl, sex)
+lumos(adsl, sex, race)
+lumos(adsl, sex, race, ethnic)
+
+
+
+
+
 #' Shed Light on Your Data
 #'
 #' Like a magic wand for exploring a \code{data.frame}.  It's so powerful that

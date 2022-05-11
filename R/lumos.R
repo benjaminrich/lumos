@@ -1,56 +1,146 @@
-"%||%" <- function(x, y) {
-    if (is.null(x)) y else x
+"%||%" <- function(x, default) {
+    if (is.null(x)) default else x
 }
 
 is.empty <- function(x) { length(x) == 0 }
 
-getLabel <- Vectorize(function(x, default) {
+getLabel <- function(x, default) {
     ifelse(is.null(y <- attr(x, "label")), default, y)
-})
+}
 
-lumos <- function(data, ...) UseMethod("lumos")
+lumos <- function(x, ..., .graphical=FALSE) {
+    if (.graphical) {
+        UseMethod("lumos_plot")
+    } else {
+        UseMethod("lumos")
+    }
+}
+
+lumos.formula <- function(data, ...) {
+}
 
 lumos.default <- function(data, ...) {
 
     name.data <- deparse1(substitute(data))
     name.dots <- as.character(unlist(match.call(expand.dots=FALSE)$...))
 
-    getName <- Vectorize(function(x) {
+    getName <- function(x) {
         p <-str2lang(x) 
         if (length(p) > 1 && identical(p[[1]], as.name("$"))) {
             as.character(p[[3]])
         } else {
             x
         }
-    })
+    }
 
     x     <- c(list(data), list(...))
-    name  <- getName(c(name.data, name.dots))
-    label <- getLabel(x, name)
+    name  <- Vectorize(getName)(c(name.data, name.dots))
+    label <- Vectorize(getLabel)(x, name)
 
     lumos_tabulate(x=x, name=name)
 }
 
-lumos.data.frame <- function(data, ..., .kable=TRUE, .graphical=FALSE) {
+lumos_atomic <- function(data, ..., .drop=TRUE, .max=Inf, .pct=TRUE, .order.by.freq=(.max < Inf), .kable=TRUE) {
 
-    if (is.empty(list(...))) {
+    if (!is.empty(list(...))) {
         .call <- match.call()
-        .call[[1]] <- `lumos_dfsummary`
+        .call[[1]] <- `lumos.default`
         return(eval(.call))
     }
 
     name.data <- deparse1(substitute(data))
-    name.dots <- as.character(unlist(match.call(expand.dots=FALSE)$...))
+    getType    <- function(x) { paste("Type:", sprintf("%s/%s", class(x), typeof(x))) }
+    getMissing <- function(x) {
+        paste("Missing:", ifelse(any(is.na(x)),
+                sprintf("%s/%s (%s%%)",
+                    sum(is.na(x)),
+                    length(x),
+                    formatC(100*mean(is.na(x)), format="f", digits=1)),
+                "none"))
+    }
+    x <- data
+    caption <- paste0(c(getLabel(x, name.data), getType(x), getMissing(x)), collapse="\n")
+
+    if ((is.numeric(x) || is.integer(x)) && length(unique(x)) > .max) {
+        tb <- c(
+            Mean   = format(mean(x, na.rm=T), digit=3),
+            SD     = format(sd(x, na.rm=T), digit=3),
+            Median = format(median(x, na.rm=T)),
+            Min    = format(min(x, na.rm=T)),
+            Max    = format(max(x, na.rm=T)))
+        tb <- data.frame(Statistic=names(tb), Value=tb)
+    } else {
+        x <- as.factor(x)
+        if (.drop) {
+            x <- droplevels(x)
+        }
+        tb <- table(x, useNA="ifany")
+        pct <- as.numeric(prop.table(table(x, useNA="ifany")))
+        tb <- data.frame(value=names(tb), N=as.numeric(tb), `%`=pct, check.names=FALSE)
+        if (.order.by.freq) {
+            tb <- tb[order(tb$N, decreasing=TRUE),]
+        }
+        tb <- head(tb, .max)
+        n.o <- length(x) - sum(tb$N)
+        if (n.o > 0) {
+            tb <- rbind(tb, data.frame(value="Other", N=n.o, `%`=n.o/length(x), check.names=FALSE))
+        }
+        if (.pct) {
+            tb$`%` <- sprintf("%.01f%%", 100*tb$`%`)
+        } else {
+            tb$`%` <- NULL
+        }
+        names(tb)[[1]] <- name.data
+    }
+    lumos_output(tb, ..., caption=caption, .kable=.kable)
+}
+
+lumos.numeric <- function(data, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_atomic`
+    eval(.call)
+}
+
+lumos.character <- function(data, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_atomic`
+    eval(.call)
+}
+
+lumos.factor <- function(data, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_atomic`
+    eval(.call)
+}
+
+lumos.logical <- function(data, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_atomic`
+    eval(.call)
+}
+
+lumos.data.frame <- function(data, ..., .max=Inf, .kable=TRUE) {
 
     x <- eval(substitute(list(...)), data, enclos=parent.frame())
+    name.data <- deparse1(substitute(data))
+    name.dots <- as.character(unlist(match.call(expand.dots=FALSE)$...))
+
+    if (is.empty(x)) {
+        .call <- match.call()
+        .call[[1]] <- `lumos_dfsummary`
+        return(eval(.call))
+    } else if (length(x) == 1) {
+        .call <- match.call()
+        .call[[1]] <- as.name("lumos_atomic")
+        .call[[2]] <- .call[[3]]
+        .call[[3]] <- NULL
+        return(eval(.call, data, enclos=parent.frame()))
+    }
+
     name  <- name.dots
     label <- getLabel(x, name)
 
-    if (.graphical) {
-        lumos_plot(x=x, name=name, label=label)
-    } else {
-        lumos_tabulate(x=x, name=name)
-    }
+    lumos_tabulate(x=x, name=name)
 }
 
 lumos_tabulate <- function(x, name, ..., .drop=TRUE, .blanks=TRUE, .recycle=TRUE, .kable=TRUE) {
@@ -95,7 +185,7 @@ lumos_dfsummary <- function(data, ..., .kable=TRUE) {
     firstvalue <- function(x) { format(x[!is.na(x)][1]) }
 
     tb <- data.frame(variable=names(data),
-        label   = getLabel(data, NA),
+        label   = Vectorize(getLabel)(data, NA),
         class   = sapply(data, firstclass),
         missing = sapply(data, nmissing),
         unique  = sapply(data, nunique),
@@ -108,7 +198,7 @@ lumos_dfsummary <- function(data, ..., .kable=TRUE) {
     lumos_output(tb, ..., .kable=.kable)
 }
 
-lumos_output <- function(tb, ..., .kable=TRUE) {
+lumos_output <- function(tb, ..., caption=NULL, .kable=TRUE) {
     if (!is.null(.kable) && !isFALSE(.kable)) {
         if (isTRUE(.kable))
             knitr::kable(x=tb, row.names=FALSE, caption=caption)
@@ -120,6 +210,159 @@ lumos_output <- function(tb, ..., .kable=TRUE) {
     }
 }
 
+lumos_plot_atomic <- function(x, y=NULL, ...) {
+    .call <- match.call()
+    if (!is.null(y)) {
+        .call[[1]] <- `lumos_plot_bivar`
+    } else {
+        .call[[1]] <- `lumos_plot_univar`
+    }
+    eval(.call)
+}
+
+lumos_plot.numeric <- function(x, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_plot_atomic`
+    eval(.call)
+}
+
+lumos_plot.factor <- function(x, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_plot_atomic`
+    eval(.call)
+}
+
+lumos_plot.character <- function(x, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_plot_atomic`
+    eval(.call)
+}
+
+lumos_plot.logical <- function(x, ...) {
+    .call <- match.call()
+    .call[[1]] <- `lumos_plot_atomic`
+    eval(.call)
+}
+
+lumos_plot_univar <- function(x,
+    ...,
+    xlab = table1::label(x) %||% deparse1(substitute(x)),
+    col1 = "#0000ff",
+    col2 = "#e5e5ff",
+    col3 = "#c74900") {
+
+    xlab1 <- xlab
+
+    if (is.numeric(x)) {
+        x <- x[!is.na(x)]
+
+        #hist(x, 15, prob=T, axes=F, ann=F, col=adjustcolor("black", 0.01), border=adjustcolor("black", 0.1))
+        #axis(1)
+
+        dens <- density(x)
+        xx <- dens$x
+        yy <- dens$y
+        keep <- xx >= min(x) & xx <= max(x)
+        xx <- xx[keep]
+        yy <- yy[keep]
+        plot(NA, type="n", xlim=range(xx), ylim=c(0, max(yy)), axes=F, ann=F)
+        polygon(c(xx, rev(xx)), c(yy, rep(0, length(yy))), col=col2, border=col1)
+        segments(median(x), 0, median(x), approx(xx, yy, median(x))$y, col=col1, lty="64")
+        axis(1)
+        #axis(1, at=c(min(x), median(x), max(x)), line=-5, lwd=0, col.axis=col3, cex.axis=2)
+
+    } else {
+        x <- as.factor(x)
+        yy <- prop.table(table(x))
+        xx <- 1:length(yy)
+        plot(NA, xlim=range(xx) + c(-0.5, 0.5), ylim=c(0, 1.1*max(yy)), type="n", axes=F, ann=F)
+        rect(xx - 0.45, 0, xx + 0.45, yy, col=col2, border=col1)
+        axis(1, at=xx, labels=names(yy), lwd=0)
+        text(xx, yy, paste0(table1::round_pad(100*yy, 1), "%"), pos=3, col=col3)
+    }
+    mtext(xlab1, side=3)
+}
+
+
+lumos_plot_bivar <- function(x, y, 
+    ...,
+    xlab = table1::label(x) %||% deparse1(substitute(x)),
+    ylab = table1::label(y) %||% deparse1(substitute(y)),
+    col1 = "#0000ff",
+    col2 = "#e5e5ff",
+    col3 = "#c74900") {
+
+    xlab1 <- xlab
+    ylab1 <- ylab
+
+    if (is.numeric(x) && is.numeric(y)) {
+
+        # Scatterplot
+        #plot(x, y, frame.plot=F, col=col2, pch=16, ann=F)
+        #lines(loess.smooth(x, y), col=col1)
+
+        # 2D kernel density
+        dens <- with(na.omit(data.frame(x=x, y=y)), MASS::kde2d(x, y))
+        with(dens, plot(x, y, type="n", ann=F, frame.plot=F))
+
+        lvls <- with(dens, pretty(range(z), 10))
+        pal  <- colorRampPalette(c("white", col1))
+        pal  <- colorRampPalette(c("white", pal(4)[2]))(length(lvls) - 1)
+        with(dens, .filled.contour(x, y, z, levels=lvls, col=pal))
+        #with(dens, contour(x, y, z, levels=lvls, col=col1, add=T, drawlabels=F))
+
+        usr <- par("usr")
+        r <- with(na.omit(data.frame(x=x, y=y)), cor(x, y))
+        text(mean(usr[1:2]), mean(usr[3:4]), paste0("R = ", table1::round_pad(r, 3)), col=col3, cex=2, font=2)
+
+    } else if ((!is.numeric(x) && is.numeric(y)) || (is.numeric(x) && !is.numeric(y))) {
+        # Boxplots
+        if ((!is.numeric(x) && is.numeric(y))) {
+            boxplot(y ~ x, col=col2, border=col1, frame.plot=F, ann=F, horizontal=F)
+        } else {
+            #boxplot(x ~ y, col=col2, border=col1, frame.plot=F, ann=F, horizontal=T)
+
+            # Ridge plot
+            s <- split(x, y)
+            plot(NA, type="n", xlim=range(x, na.rm=T), ylim=c(0, length(s)), axes=F, ann=F)
+            for (i in 1:length(s)) {
+                xi <- s[[i]]
+                xi <- xi[!is.na(xi)]
+                dens <- density(xi)
+                xx <- dens$x
+                yy <- dens$y
+                keep <- xx >= min(xi) & xx <= max(xi)
+                xx <- xx[keep]
+                yy <- yy[keep]
+                yy <- (i - 1) + 0.9*yy/max(yy)
+                polygon(c(xx, rev(xx)), c(yy, rep(i-1, length(yy))), col=col2, border=col1)
+                segments(median(xi), i-1, median(xi), approx(xx, yy, median(xi))$y, col=col1, lty="64")
+            }
+            axis(1)
+            axis(2, at=seq_along(s) - 0.5, lwd=0, labels=names(s))
+        }
+    } else {
+        # Mosaic plot
+        mosaicplot(prop.table(table(x, y)), col=col2, border=col1, main=NULL, xlab="", ylab="")
+    }
+    mtext(xlab1, side=3, cex=1.5, font=2)
+    #mtext(ylab1, side=2, cex=1.5, font=2, line=3)
+    #mtext(ylab1, side=4, cex=1.5, font=2)
+    usr <- par("usr")
+    #text(usr[2] + 0.02*diff(usr[1:2]), mean(usr[3:4]), ylab1, cex=1.7, font=2, srt=-90, xpd=NA)
+    text(usr[2], mean(usr[3:4]), ylab1, cex=1.7, font=2, srt=-90, xpd=NA)
+}
+
+library(CDISC)
+adsl <- cdiscpilot01$adam$adsl
+
+lumos(adsl, age)
+lumos(adsl, age, .max=20)
+lumos(adsl, sex)
+lumos(adsl, sex, .max=20)
+lumos(adsl, sex, race)
+lumos(adsl, age, sex, .max=20)
+
 lumos(CDISC::cdiscpilot01$sdtm$dm)
 lumos(CDISC::cdiscpilot01$sdtm$dm, .kable=F)
 
@@ -130,6 +373,21 @@ lumos(adsl$sex, adsl$race, adsl$ethnic)
 lumos(adsl, sex)
 lumos(adsl, sex, race)
 lumos(adsl, sex, race, ethnic)
+
+lumos(~adsl, sex)
+
+
+lumos(1:100, .max=10)
+lumos(adsl$age, .max=10)
+lumos(adsl$age)
+lumos(adsl, age)
+lumos(adsl, age, .max=10)
+lumos(adsl, sex, age)
+
+lumos(adsl$sex, .graphical=T)
+lumos(adsl$sex, adsl$age, .graphical=T)
+lumos(adsl$age, .graphical=T)
+lumos(adsl$age, adsl$sex, .graphical=T)
 
 
 

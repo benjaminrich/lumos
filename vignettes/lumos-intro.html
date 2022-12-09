@@ -12,7 +12,7 @@
 
 <meta name="author" content="Benjamin Rich" />
 
-<meta name="date" content="2021-06-14" />
+<meta name="date" content="2022-05-04" />
 
 <title>lumos: Shed Light on Your Data</title>
 
@@ -141,16 +141,127 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore"><code>lumos</code>: Shed Light on Your Data</h1>
 <h4 class="author">Benjamin Rich</h4>
-<h4 class="date">2021-06-14</h4>
+<h4 class="date">2022-05-04</h4>
 
 
 
-<p>The <code>lumos</code> package provides one main function, also called <code>lumos()</code> (but it can be abbreviated simply to <code>l()</code> to avoid typing). The main uses cases of this function are to quickly explore data interactively in the console, or create simple tabular summaries in R markdown documents. Similar to <code>summary()</code>, but aims to be as convenient as possible and produce nicer looking outputs.</p>
-<p>If we call <code>lumos()</code> with a <code>data.frame</code> as its sole argument, it outputs a table summarizing the variables, including colums <code>variable</code> (its name), <code>label</code> (only present if at least one variable has a <code>label</code> atrribute), <code>class</code>, <code>missing</code> (count) and <code>example</code> (a single value from that variable, typically the first nonmissing value). Let’s try it on the Boston housing data from the <code>MASS</code> package:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lumos</span>(Boston)</span></code></pre></div>
+<p>The <code>lumos</code> package provides one main function, also called <code>lumos()</code> (but it can be abbreviated simply to <code>l()</code> to save keystokes). The main uses cases of this function are to quickly explore data interactively in the console, or create simple tabular summaries in R markdown documents. Similar to <code>summary()</code>, but aims to be as convenient as possible and produce nicer looking outputs.</p>
+<p>For the examples in this vignette, I will use the adsl dataset from the CDISC SDTM/ADaM Pilot Project, available <a href="https://github.com/cdisc-org/sdtm-adam-pilot-project/tree/master/updated-pilot-submission-package/900172/m5/datasets/cdiscpilot01/analysis/adam/datasets">here</a>. Originally it’s a SAS dataset, but for simplicity I’ve already converted it to R and saved it in .rds format.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adsl <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;adsl.rds&quot;</span>)</span></code></pre></div>
+<p>If we call <code>lumos()</code> with a <code>data.frame</code> as its sole argument, it outputs a table summarizing the variables, including the columns: <code>variable</code> (its name), <code>label</code> (only present if at least one variable has a <code>label</code> atrribute), <code>class</code>, <code>missing</code> (count) and <code>example</code> (a single value from that variable, typically the first nonmissing value).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(adsl)</span></code></pre></div>
 <pre><code>
+
+Table:  
+254 rows, 48 columns
+
+|variable |label                                    |class     | missing| unique|example            |
+|:--------|:----------------------------------------|:---------|-------:|------:|:------------------|
+|studyid  |Study Identifier                         |factor    |       0|      1|CDISCPILOT01       |
+|usubjid  |Unique Subject Identifier                |character |       0|    254|01-701-1015        |
+|subjid   |Subject Identifier for the Study         |character |       0|    254|1015               |
+|siteid   |Study Site Identifier                    |factor    |       0|     17|701                |
+|sitegr1  |Pooled Site Group 1                      |factor    |       0|     11|701                |
+|arm      |Description of Planned Arm               |factor    |       0|      3|Placebo            |
+|trt01p   |Planned Treatment for Period 01          |factor    |       0|      3|Placebo            |
+|trt01pn  |Planned Treatment for Period 01 (N)      |integer   |       0|      3|0                  |
+|trt01a   |Actual Treatment for Period 01           |factor    |       0|      3|Placebo            |
+|trt01an  |Actual Treatment for Period 01 (N)       |integer   |       0|      3|0                  |
+|trtsdt   |Date of First Exposure to Treatment      |Date      |       0|    205|2014-01-02         |
+|trtedt   |Date of Last Exposure to Treatment       |Date      |       0|    214|2014-07-02         |
+|trtdur   |Duration of Treatment (days)             |integer   |       0|    117|182                |
+|avgdd    |Avg Daily Dose (as planned)              |numeric   |       0|     48|0                  |
+|cumdose  |Cumulative Dose (as planned)             |integer   |       0|    118|0                  |
+|age      |Age                                      |integer   |       0|     36|63                 |
+|agegr1   |Pooled Age Group 1                       |factor    |       0|      3|&lt;65                |
+|agegr1n  |Pooled Age Group 1 (N)                   |integer   |       0|      3|1                  |
+|ageu     |Age Units                                |factor    |       0|      1|YEARS              |
+|race     |Race                                     |factor    |       0|      3|WHITE              |
+|racen    |Race (N)                                 |integer   |       0|      3|1                  |
+|sex      |Sex                                      |factor    |       0|      2|F                  |
+|ethnic   |Ethnicity                                |factor    |       0|      2|HISPANIC OR LATINO |
+|saffl    |Safety Population Flag                   |factor    |       0|      1|Y                  |
+|ittfl    |Intent-To-Treat Population Flag          |factor    |       0|      1|Y                  |
+|efffl    |Efficacy Population Flag                 |factor    |       0|      2|Y                  |
+|comp8fl  |Completers of Week 8 Population Flag     |factor    |       0|      2|Y                  |
+|comp16fl |Completers of Week 16 Population Flag    |factor    |       0|      2|Y                  |
+|comp24fl |Completers of Week 24 Population Flag    |factor    |       0|      2|Y                  |
+|disconfl |Did the Subject Discontinue the Study?   |factor    |     110|      2|Y                  |
+|dsraefl  |Discontinued due to AE?                  |factor    |     162|      2|Y                  |
+|dthfl    |Subject Died?                            |factor    |     251|      2|Y                  |
+|bmibl    |Baseline BMI (kg/m^2)                    |numeric   |       1|    123|25.1               |
+|bmiblgr1 |Pooled Baseline BMI Group 1              |factor    |       0|      3|25-&lt;30             |
+|heightbl |Baseline Height (cm)                     |numeric   |       0|     52|147.3              |
+|weightbl |Baseline Weight (kg)                     |numeric   |       1|    117|54.4               |
+|educlvl  |Years of Education                       |integer   |       0|     19|16                 |
+|disonsdt |Date of Onset of Disease                 |Date      |       0|    241|2010-04-30         |
+|durdis   |Duration of Disease (Months)             |numeric   |       0|    205|43.9               |
+|durdsgr1 |Pooled Disease Duration Group 1          |factor    |       0|      2|&gt;=12               |
+|visit1dt |Date of Visit 1                          |Date      |       0|    207|2013-12-26         |
+|rfstdtc  |Subject Reference Start Date/Time        |factor    |       0|    205|2014-01-02         |
+|rfendtc  |Subject Reference End Date/Time          |factor    |       0|    211|2014-07-02         |
+|visnumen |End of Trt Visit (Vis 12 or Early Term.) |integer   |       0|      9|12                 |
+|rfendt   |Date of Discontinuation/Completion       |Date      |       0|    211|2014-07-02         |
+|dcdecod  |Standardized Disposition Term            |factor    |       0|      9|COMPLETED          |
+|dcreascd |Reason for Discontinuation               |factor    |       0|     10|Completed          |
+|mmsetot  |MMSE Total                               |integer   |       0|     15|23                 |</code></pre>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#dm &lt;- read.csv(&quot;dm.csv&quot;)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm$SEX)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm$AGE)</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, RACE, ETHNIC)</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, ARM)</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, ARM, ARMCD)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, ARM, ACTARM)</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, ARM, ITT, EFFICACY, SAFETY)</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, SEX)</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, RACE)</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, AGE)</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, .missing=T)</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#l(dm, .gen=T)</span></span></code></pre></div>
+<p>Let’s try it on the Boston housing data from the <code>MASS</code> package:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(pbc)</span></code></pre></div>
+<pre><code>
+
+Table: pbc
+418 rows, 20 columns
+
+|variable |class   | missing| unique|example  |
+|:--------|:-------|-------:|------:|:--------|
+|id       |integer |       0|    418|1        |
+|time     |integer |       0|    399|400      |
+|status   |integer |       0|      3|2        |
+|trt      |integer |     106|      3|1        |
+|age      |numeric |       0|    344|58.76523 |
+|sex      |factor  |       0|      2|f        |
+|ascites  |integer |     106|      3|1        |
+|hepato   |integer |     106|      3|1        |
+|spiders  |integer |     106|      3|1        |
+|edema    |numeric |       0|      3|1        |
+|bili     |numeric |       0|     98|14.5     |
+|chol     |integer |     134|    202|261      |
+|albumin  |numeric |       0|    154|2.6      |
+|copper   |integer |     108|    159|156      |
+|alk.phos |numeric |     106|    296|1718     |
+|ast      |numeric |     106|    180|137.95   |
+|trig     |integer |     136|    147|172      |
+|platelet |integer |      11|    244|190      |
+|protime  |numeric |       2|     49|12.2     |
+|stage    |integer |       6|      5|4        |</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lumos</span>(Boston)</span></code></pre></div>
+<pre><code>
+
+Table: Boston
+506 rows, 14 columns
 
 |variable |class   | missing| unique|example |
 |:--------|:-------|-------:|------:|:-------|
@@ -168,10 +279,61 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 |black    |numeric |       0|    357|396.9   |
 |lstat    |numeric |       0|    455|4.98    |
 |medv     |numeric |       0|    229|24      |</code></pre>
-<p>When called with  and one other argument, if the argument is categorical outputs a frequency table and if it is continuous outputs a few descriptive statistics (mean, standard deviation, median, min and max). The  option is used to decide if a numeric argument is continuous or categorical.</p>
-<p>When called with more than one argument following , those arguments should all be categorical ( is ignored in this case). A frequency table is produced for the combinations of the categories, nested from left to right. Percentages are not shown, just counts, and no sorting is done (the categories appear in the order of factor levels).</p>
-<p>By default, the function  is used to format the output so you get nice looking tables in both the console and in R markdown documents.</p>
-<p>If the  argument is , then something different happens. Instead of outputing a table, the function prints code statements into the console: a call to  for each variable in . The code can be copied from the console back into the script and used to explore the  one variable at a time. This is useful because it saves the need to type the code for each variable.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pima <span class="ot">&lt;-</span> Pima.tr2</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(pima)</span></code></pre></div>
+<pre><code>
+
+Table: pima
+300 rows, 8 columns
+
+|variable |class   | missing| unique|example |
+|:--------|:-------|-------:|------:|:-------|
+|npreg    |integer |       0|     15|5       |
+|glu      |integer |       0|    108|86      |
+|bp       |integer |      13|     39|68      |
+|skin     |integer |      98|     46|28      |
+|bmi      |numeric |       3|    158|30.2    |
+|ped      |numeric |       0|    249|0.364   |
+|age      |integer |       0|     44|24      |
+|type     |factor  |       0|      2|No      |</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>titanic <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(Titanic)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(titanic)</span></code></pre></div>
+<pre><code>
+
+Table: titanic
+32 rows, 5 columns
+
+|variable |class   | missing| unique|example |
+|:--------|:-------|-------:|------:|:-------|
+|Class    |factor  |       0|      4|1st     |
+|Sex      |factor  |       0|      2|Male    |
+|Age      |factor  |       0|      2|Child   |
+|Survived |factor  |       0|      2|No      |
+|Freq     |numeric |       0|     22|0       |</code></pre>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(titanic, Survived)</span></code></pre></div>
+<pre><code>
+
+|Survived |  N|
+|:--------|--:|
+|No       | 16|
+|Yes      | 16|</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">l</span>(titanic, Class, Survived)</span></code></pre></div>
+<pre><code>
+
+|Class |Survived |  N|
+|:-----|:--------|--:|
+|1st   |No       |  4|
+|      |Yes      |  4|
+|2nd   |No       |  4|
+|      |Yes      |  4|
+|3rd   |No       |  4|
+|      |Yes      |  4|
+|Crew  |No       |  4|
+|      |Yes      |  4|</code></pre>
+<p>When called with <code>data</code> and one other argument, if the argument is categorical outputs a frequency table and if it is continuous outputs a few descriptive statistics (mean, standard deviation, median, min and max). The <code>max</code> option is used to decide if a numeric argument is continuous or categorical.</p>
+<p>When called with more than one argument following <code>data</code>, those arguments should all be categorical (<code>.max</code> is ignored in this case). A frequency table is produced for the combinations of the categories, nested from left to right. Percentages are not shown, just counts, and no sorting is done (the categories appear in the order of factor levels).</p>
+<p>By default, the function <code>knitr::kable</code> is used to format the output so you get nice looking tables in both the console and in R markdown documents.</p>
+<p>If the <code>.gen</code> argument is <code>TRUE</code>, then something different happens. Instead of outputing a table, the function prints code statements into the console: a call to <code>lumos()</code> for each variable in <code>data</code>. The code can be copied from the console back into the script and used to explore the <code>data.frame</code> one variable at a time. This is useful because it saves the need to type the code for each variable.</p>
 
 
 

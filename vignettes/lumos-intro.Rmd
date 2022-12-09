@@ -19,36 +19,84 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, comment='', render=knitr::no
 library(lumos, quietly=TRUE)
 ```
 
-
 The `lumos` package provides one main function, also called `lumos()` (but it can
-be abbreviated simply to `l()` to avoid typing).  The main uses cases of this
+be abbreviated simply to `l()` to save keystokes).  The main uses cases of this
 function are to quickly explore data interactively in the console, or create
 simple tabular summaries in R markdown documents.  Similar to `summary()`, but
 aims to be as convenient as possible and produce nicer looking outputs.
 
-If we call `lumos()` with a `data.frame` as its sole argument, it outputs a table
-summarizing the variables, including the columns: `variable` (its name), `label`
-(only present if at least one variable has a `label` atrribute), `class`,
-`missing` (count) and `example` (a single value from that variable, typically
-the first nonmissing value).  Let's try it on the Boston housing data from the
-`MASS` package:
+For the examples in this vignette, I will use the dm dataset from the CDISC
+SDTM/ADaM Pilot Project, available
+[here](https://github.com/cdisc-org/sdtm-adam-pilot-project/tree/master/updated-pilot-submission-package/900172/m5/datasets/cdiscpilot01/analysis/adam/datasets).
+Originally it's a SAS dataset, but for simplicity I've already converted it to
+R and saved it in .rds format.
 
 ```{r}
-library(survival)
-l(pbc)
+adsl <- readRDS("adsl.rds")
+dm <- readRDS("dm.rds")
+```
 
+#' ## Wave the lumos wand once for tabular output
 
-library(MASS)
-lumos(Boston)
+Let us start to explore this dataset, which we know nothing about.  The first
+thing we might do is use the `l` function (a.k.a. the lumos "wand") to get a
+list of columns:
 
-pima <- Pima.tr2
-l(pima)
+```{r}
+l(dm)
+```
 
+Actually, it gives us more than just a list of columns; it also give us the
+labels associated to each column (if any), the class, the number of missing and
+unique values, and an example (a single value from that variable, typically the
+first nonmissing value).  It also tells us the number of rows and columns. All
+useful and basic information.
 
-titanic <- as.data.frame(Titanic)
-l(titanic)
-l(titanic, Survived)
-l(titanic, Class, Survived)
+Now let's explore further. We want to know about the different arms in this study:
+
+```{r}
+l(dm, arm)
+```
+
+This gives us a frequency table. Note that we for the second argument we just
+specified the column name and it was found in the table (a.k.a. nonstandard
+evaluation). 
+
+We can specify more additional arguments. For instance, we want to know if the
+actual arm the subjects were assigned to was the same as the randomized arm:
+
+```{r}
+l(dm, arm, actarm)
+```
+
+We see that 12 subjects that were randomized to receive the high dose of
+xanomeline actually received the low dose.
+
+Similarly, we could look at race, ethnicity and sex:
+
+```{r}
+l(dm, race, ethnic, sex)
+```
+
+#' ## Wave the lumos wand twice for graphical output
+
+```{r}
+
+ll(adsl$race)
+ll(adsl$sex)
+ll(adsl$weightbl)
+ll(adsl$heightbl)
+
+ll(adsl, race)
+ll(adsl, sex)
+ll(adsl, weightbl)
+ll(adsl, heightbl)
+
+ll(adsl, arm, sex)
+ll(adsl, ethnic, arm)
+ll(adsl, weightbl, heightbl)
+ll(adsl, weightbl, weightbl)
+ll(adsl, sex, weightbl)
 ```
 
 When called with `data` and one other argument, if the argument is
@@ -73,4 +121,10 @@ into the console: a call to `lumos()` for each variable in `data`.
 The code can be copied from the console back into the script and used to
 explore the `data.frame` one variable at a time. This is useful because
 it saves the need to type the code for each variable.
+
+#' ## Why I wrote this package
+
+I wrote this package because it makes my life easier. It may not do anything
+fancy, and there may be other ways to get the same information, but for me this
+was the most convenient way to do these basic, repetitive things.
 

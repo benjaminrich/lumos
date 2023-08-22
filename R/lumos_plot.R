@@ -110,6 +110,8 @@ bivar <- function(x, y,
     text(usr[2], mean(usr[3:4]), ylab1, cex=1.7, font=2, srt=-90, xpd=NA)
 }
 
+#' @rdname lumos
+#' @export
 lumos_plot <- function(...) {
     .call <- match.call()
     .call[[1]] <- `lumos`

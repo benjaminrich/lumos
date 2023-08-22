@@ -1,7 +1,7 @@
 Package: lumos
 Type: Package
-Version: 0.1
-Date: 2021-06-10
+Version: 0.2
+Date: 2023-08-22
 Title: Shed Light on Your Data
 Description: Simple tabulation for data exploration in the console or in R markdown documents.
 Authors@R: person("Benjamin", "Rich", role=c("aut", "cre", "cph"), email="mail@benjaminrich.net")
@@ -15,4 +15,4 @@ VignetteBuilder: knitr
 LazyData: true
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3

@@ -93,6 +93,16 @@
 #' lumos(mtcars, cyl, gear)
 #' lumos(mtcars, cyl, gear, am)
 #' lumos(mtcars, cyl, gear, am, .blanks=FALSE, .kable=FALSE)
+#'
+#' # Graphical
+#' opar <- par(mfrow=c(2, 3))
+#' lumos_plot(mtcars, hp)
+#' lumos_plot(mtcars, factor(gear))
+#' lumos_plot(mtcars, hp, disp)
+#' lumos_plot(mtcars, hp, factor(gear))
+#' lumos_plot(mtcars, factor(gear), hp)
+#' lumos_plot(mtcars, factor(gear), factor(cyl))
+#' par(opar)
 #' @export
 #' @importFrom stats median sd
 #' @importFrom utils head

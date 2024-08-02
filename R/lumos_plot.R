@@ -36,9 +36,11 @@ univar <- function(x,
         plot(NA, xlim=range(xx) + c(-0.5, 0.5), ylim=c(0, 1.1*max(yy)), type="n", axes=F, ann=F)
         rect(xx - 0.45, 0, xx + 0.45, yy, col=col2, border=col1)
         axis(1, at=xx, labels=names(yy), lwd=0)
-        text(xx, yy, paste0(table1::round_pad(100*yy, 1), "%"), pos=3, col=col3)
+        text(xx, yy, paste0(table1::round_pad(100*yy, 1), "%"), pos=3, col=col3, cex=1.2)
     }
-    mtext(xlab1, side=3)
+    #mtext(xlab1, side=3, cex=1.3, font=2)
+    usr <- par("usr")
+    text(mean(usr[1:2]), usr[4]+2*strheight(""), xlab1, cex=1.7, font=2, srt=0, xpd=NA)
 }
 
 
@@ -55,12 +57,13 @@ bivar <- function(x, y,
     if (is.numeric(x) && is.numeric(y)) {
 
         # Scatterplot
-        #plot(x, y, frame.plot=F, col=col2, pch=16, ann=F)
+        #plot(x, y, ann=F, frame.plot=F, pch=21, col=adjustcolor(col1, .5), bg=adjustcolor(col2, .5), cex=2)
         #lines(loess.smooth(x, y), col=col1)
 
         # 2D kernel density
         dens <- with(na.omit(data.frame(x=x, y=y)), MASS::kde2d(x, y))
         with(dens, plot(x, y, type="n", ann=F, frame.plot=F))
+        #plot(0, xlim=range(x, na.rm=T), ylim=range(y, na.rm=T), type="n", ann=F, frame.plot=F)
 
         lvls <- with(dens, pretty(range(z), 10))
         pal  <- colorRampPalette(c("white", col1))
@@ -100,14 +103,16 @@ bivar <- function(x, y,
         }
     } else {
         # Mosaic plot
-        mosaicplot(prop.table(table(x, y)), col=col2, border=col1, main=NULL, xlab="", ylab="")
+        mosaicplot(prop.table(table(x, y)), col=col2, border=col1, main=NULL, xlab="", ylab="", cex.axis=1.2)
     }
-    mtext(xlab1, side=3, cex=1.5, font=2)
+    #mtext(xlab1, side=3, cex=1.3, font=2)
     #mtext(ylab1, side=2, cex=1.5, font=2, line=3)
     #mtext(ylab1, side=4, cex=1.5, font=2)
     usr <- par("usr")
     #text(usr[2] + 0.02*diff(usr[1:2]), mean(usr[3:4]), ylab1, cex=1.7, font=2, srt=-90, xpd=NA)
     text(usr[2], mean(usr[3:4]), ylab1, cex=1.7, font=2, srt=-90, xpd=NA)
+    text(mean(usr[1:2]), usr[4]+2*strheight(""), xlab1, cex=1.7, font=2, srt=0, xpd=NA)
+
 }
 
 #' @rdname lumos

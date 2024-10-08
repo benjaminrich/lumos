@@ -79,7 +79,7 @@ bivar <- function(x, y,
         # Boxplots
         if ((!is.numeric(x) && is.numeric(y))) {
 
-            boxplot(y ~ x, col=col2, border=col1, frame.plot=F, ann=F, horizontal=F)
+            boxplot(y ~ x, col=col2, border=col1, frame.plot=F, ann=F, horizontal=F, boxwex=0.6)
             yy <- table(x)
             xx <- 1:nlevels(x)
             usr <- par("usr")

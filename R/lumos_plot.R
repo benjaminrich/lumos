@@ -78,7 +78,13 @@ bivar <- function(x, y,
     } else if ((!is.numeric(x) && is.numeric(y)) || (is.numeric(x) && !is.numeric(y))) {
         # Boxplots
         if ((!is.numeric(x) && is.numeric(y))) {
+
             boxplot(y ~ x, col=col2, border=col1, frame.plot=F, ann=F, horizontal=F)
+            yy <- table(x)
+            xx <- 1:nlevels(x)
+            usr <- par("usr")
+            text(xx, usr[4], paste0("N=", yy), pos=NULL, col=col3, cex=1.2, xpd=NA)
+
         } else {
             #boxplot(x ~ y, col=col2, border=col1, frame.plot=F, ann=F, horizontal=T)
 
